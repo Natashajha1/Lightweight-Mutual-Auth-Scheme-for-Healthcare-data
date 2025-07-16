@@ -28,7 +28,7 @@ This repository contains both the **protocol specification** written in Verifpal
 | `scheme.vp`       | Verifpal model of the authentication protocol |
 | `auth_scheme.py`  | Python implementation of the scheme (simulation + hash logic) |
 | `README.md`       | This file |
-| `DSP_project`     | Project presentation |
+| `project_ppt`     | Project presentation |
 
 
 ---
