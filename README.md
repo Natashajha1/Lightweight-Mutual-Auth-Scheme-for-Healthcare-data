@@ -1,5 +1,3 @@
-# Lightweight-Mutual-Auth-Scheme-for-Healthcare-data
-
 # 🔐 Secure and Efficient Anonymous Authentication for Distributed Healthcare Systems Handling Medical Big Data
 
 This project implements and analyzes a **lightweight, secure, and anonymous mutual authentication scheme** for distributed IoT-enabled healthcare systems handling medical big data. 
