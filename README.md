@@ -5,10 +5,6 @@ This repository contains both the **protocol specification** written in Verifpal
 
 ---
 
-## 📜 Project Highlights
-
-- **Secure Mutual Authentication** between users and IoT devices via a gateway.
-
  ## 🚀 Features
 
 - ✅ **Mutual Authentication** between users and IoT devices via gateway
