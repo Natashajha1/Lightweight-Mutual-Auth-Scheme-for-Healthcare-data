@@ -8,16 +8,20 @@ This repository contains both the **protocol specification** written in Verifpal
 ## 📜 Project Highlights
 
 - **Secure Mutual Authentication** between users and IoT devices via a gateway.
-- **Anonymity**, **integrity**, and **lightweight design** using:
-  - XOR operations
-  - Hash functions
-  - Timestamp verification
-  - Session key generation and validation
-- **Formally verified** using the Verifpal symbolic analysis tool to prove resistance to:
-  - Replay attacks
+
+ ## 🚀 Features
+
+- ✅ **Mutual Authentication** between users and IoT devices via gateway
+- ✅ **Anonymity & Untraceability**: Conceals user identity across sessions
+- ✅ **Replay & MITM Resistance** using timestamps and challenge–response validation
+- ✅ **Lightweight Design**: Efficient for constrained IoT environments
+- ✅ **Secure Key Exchange** based on hashing and XOR-based session generation and validation
+- ✅ **Formal Security Verification** using Verifpal against multiple attack vectors to prove resistance to:
+- - Replay attacks
   - Man-in-the-middle (MITM)
   - Eavesdropping
   - Privileged insider and capture attacks
+- ✅ **Python Simulation** for step-by-step cryptographic workflow
 
 ---
 
