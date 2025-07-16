@@ -1,0 +1,188 @@
+// SPDX-License-Identifier: GPL-3.0-only
+
+attacker[active]
+
+// Entities: User, IoTD (Device), Gateway, CA (Central Administrator)
+
+// System initialization
+principal CA [
+
+    generates RU, RD, RG // CA generates secret keys for User, IoTD, and Gateway
+]
+CA -> User: RU
+CA -> IoTD: RD
+CA -> Gateway: RG
+
+// User registration process
+principal User [
+    knows private Uid, Upw
+    generates N
+    knows private RU // User only knows RU after receiving it from CA
+    
+    // User generates registration request after receiving RU
+    RUid = Uid XOR RU
+    RUpw = HASH(CONCAT(Upw, N, Uid))
+]
+User -> CA: RUid, RUpw
+
+principal CA [
+    generates G1
+    knows private RUid, RUpw
+    // CA processes User's registration request
+    A1 = HASH(CONCAT(RUid, RUpw))
+    A2 = A1 XOR G1
+    Utid = RUid XOR G1
+    
+    stores Uid, A1, A2, Utid
+]
+CA -> User: A2
+
+principal User [
+    knows private A2
+    G1 = A2 XOR (RU XOR RUid)
+    Utid = RUid XOR G1
+    D = HASH(CONCAT(RUpw, G1)) XOR Utid
+    
+    stores G1, Utid, N, D
+]
+
+// IoTD registration process
+principal IoTD [
+    knows private Did
+    generates N1
+    knows private RD // Device only knows RD after receiving it from CA
+    
+    // IoTD generates registration request after receiving RD
+    RDid = Did XOR RD
+]
+IoTD -> Gateway: RDid, N1
+
+principal Gateway [
+    knows private RG // Gateway only knows RG after receiving it from CA
+    
+    // Gateway processes IoTD's request
+    RD_prime = RDid XOR RG
+]
+Gateway -> CA: RD_prime, N1
+
+principal CA [
+    generates G2
+    knows private RD_prime, N1
+    
+    // CA processes IoTD's request
+    Did = RD_prime XOR (RD XOR RG)
+    B = RD XOR G2
+    O = RD_prime XOR G2 XOR N1
+    Dtid = RDid XOR G2
+    
+    stores RDid, B, O, Dtid
+]
+CA -> Gateway: O
+
+principal Gateway [
+    // Gateway forwards O to IoTD
+    O_prime = O XOR RG
+]
+Gateway -> IoTD: O_prime
+
+principal IoTD [
+    knows private O_prime
+    // Step 5: IoTD processes response
+    G2 = O_prime XOR RDid XOR N1
+    Dtid = RDid XOR G2
+    
+    stores Dtid, N1
+]
+
+// Login and Authentication process
+
+// User logs into the system
+principal User [
+    generates Ts
+    RUid = Uid XOR RU
+    RUpw = HASH(CONCAT(Upw, N, Uid))
+    D1 = HASH(CONCAT(RUpw, G1)) XOR Utid
+    K = D1 XOR Utid
+    
+    verify(D1 == D)
+]
+User -> CA: K, RDid, Ts
+
+principal CA [
+    knows private K, RDid, Ts
+    // CA verifies the login request
+    verifies(Tdelta > (Tc - Ts)) // Time verification
+    K_prime = HASH(CONCAT(RUpw, G1))
+    verify(K_prime == K)
+    
+    // CA computes session values
+    Y1 = Dtid XOR G1
+    Y2 = HASH(CONCAT(N1, G2))
+    SKd = HASH(CONCAT(SK, G1, G2, O, N1))
+]
+CA -> Gateway: Y1, Y2, Dtid, SKd, Ts
+
+principal Gateway [
+    knows private Y1, Y2, Dtid, SKd, Ts
+    // Gateway forwards message to IoTD
+    verifies(Tdelta > (Tc - Ts))
+]
+Gateway -> IoTD: Y1, Y2, Dtid, SKd, Ts
+
+principal IoTD [
+    knows private Y1, Y2, Dtid, SKd, Ts
+    // IoTD verifies the request and computes session key
+    verifies(Tdelta > (Tc - Ts))
+    G1 = Dtid XOR Y1
+    Y2_prime = HASH(CONCAT(N1, G2))
+    verify(Y2_prime == Y2)
+    
+    SK = HASH(CONCAT(SKd, N1, G1, G2, O_prime))
+    Z = HASH(CONCAT(N1, G2, SK))
+    Dtid_new = G1 XOR Did
+    stores Dtid_new
+]
+IoTD -> Gateway: Z, Ts
+
+principal Gateway [
+    knows private Z, Ts
+    // Gateway forwards message to CA
+    verifies(Tdelta > Tc - Ts)
+]
+Gateway -> CA: Z, Ts
+
+principal CA [
+    knows private Z, Ts
+    // CA verifies IoTD's response and updates identities
+    verifies(Tdelta > (Tc - Ts))
+    Z_prime = HASH(CONCAT(N1, G2, SK))
+    verify(Z_prime == Z)
+    Dtid_new = G1 XOR Did
+    U = RUid XOR G1
+    SKu = HASH(CONCAT(SK, RUpw, G1, A2))
+    n = HASH(CONCAT(RUid, RUpw, G1, SK))
+    Uid_new = G1 XOR Uid
+    
+    stores Uid_new, Dtid_new
+]
+CA -> User: U, SKu, n, Ts
+
+principal User [
+    knows private U, SKu, n, Ts
+    verifies(Tdelta > (Tc - Ts))
+    // User verifies the session key
+    G1_prime = U XOR RUid
+    verify(G1_prime == G1)
+    
+    SK = SKu XOR HASH(CONCAT(RUpw, G1, A2))
+    n_prime = HASH(CONCAT(RUid, RUpw, G1, SK))
+    
+    verify(n_prime == n)
+    Uid_new = G1 XOR Uid
+]
+
+// Queries for verification
+query authentication(User, CA, SKu)
+query confidentiality(User, CA, SKu)
+query authentication(IoTD, CA, SK)
+query confidentiality(IoTD, CA, SK)
